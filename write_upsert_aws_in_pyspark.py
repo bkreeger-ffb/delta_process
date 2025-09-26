@@ -17,7 +17,7 @@ def update_and_load_to_aurora(
 
     Args:
         spark: The SparkSession object.
-        current_data: The DataFrame representing the existing data (e.g., from Aurora).
+        current_data: The DataFrame representing the existing data
         new_data: The DataFrame containing the new/updated data.
         primary_keys: A list of column names that form the primary key for joining.
         aurora_jdbc_url: The JDBC URL for the Aurora database.
@@ -44,8 +44,7 @@ def update_and_load_to_aurora(
     updated_rows = joined_df.filter(
         (col("nd." + primary_keys[0]).isNotNull()) & (col("cd." + primary_keys[0]).isNotNull()) &
         (
-            # Add conditions to check if non-primary key columns have changed
-            # Example for a single column 'value_col':
+            # Add conditions to check if non-primary key columns have changed; this is example for 2 cols
             (col("nd.value_col") != col("cd.value_col")) |
             (col("nd.another_col") != col("cd.another_col")) # Add more for all relevant columns
         )
@@ -55,11 +54,12 @@ def update_and_load_to_aurora(
     new_rows = joined_df.filter(col("cd." + primary_keys[0]).isNull()).select("nd.*")
 
     # Identify rows to keep from current_data (primary keys exist only in current_data or no changes)
+    # Do we need to do this?  We could filter new and changed out
     unchanged_rows = joined_df.filter(
         (col("nd." + primary_keys[0]).isNotNull()) & (col("cd." + primary_keys[0]).isNotNull()) &
         (
             # Add conditions to check if non-primary key columns have NOT changed
-            # This is the inverse of the updated_rows condition
+            # This is the inverse of the updated_rows condition and seems unwieldly
             ~((col("nd.value_col") != col("cd.value_col")) |
               (col("nd.another_col") != col("cd.another_col"))) # Add more for all relevant columns
         )
